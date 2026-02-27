@@ -1,0 +1,28 @@
+label,subject,body
+phishing,Account locked,Click here to verify your account immediately.
+phishing,Payment overdue,Please update your payment to avoid suspension.
+phishing,Password expired,Reset your password within 24 hours.
+phishing,Congratulations winner,You have won $1000 click the link to claim.
+phishing,Bank alert,Unusual login detected confirm your details now.
+phishing,Delivery failed,We could not deliver your package click here.
+phishing,Security update,Update your account to continue using the service.
+phishing,Confirm identity,Provide your personal info to avoid account closure.
+phishing,Payment required,Your invoice is overdue pay immediately.
+phishing,Unlock account,Follow this link to unlock your account.
+phishing,Action needed,Your Apple ID has been suspended.
+phishing,Account warning,We noticed suspicious activity click to verify.
+phishing,Update billing,Your credit card has expired update details now.
+phishing,Lottery winner,Congratulations claim your prize by clicking the link.
+phishing,Verify details,Confirm your address to continue.
+legit,Meeting Reminder,Please attend the meeting tomorrow at 10 AM.
+legit,Project Update,The project deadline has been extended.
+legit,Class Schedule,Your class starts at 8 AM.
+legit,Invoice Confirmation,Thank you for your recent purchase.
+legit,Team Discussion,We will discuss the project progress.
+legit,Workshop Invitation,You are invited to join our workshop.
+legit,Report Submission,Please submit your assignment by Friday.
+legit,Exam Schedule,The exam will be held next week.
+legit,Holiday Notice,The office will be closed tomorrow.
+legit,University Announcement,Please read the updated academic policy.
+legit,Meeting reminder,Our weekly meeting is Monday at 9 AM.
+legit,Project update

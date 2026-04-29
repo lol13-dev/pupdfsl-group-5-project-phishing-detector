@@ -1,17 +1,31 @@
 # ===============================
 # IMPORTS
 # ===============================
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from typing import Optional
 from pathlib import Path
 import joblib
 import re
 import os
+import toml
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 
 from database import init_db, save_detection, get_all_detections, get_stats
+
+# Load secrets from .streamlit/secrets.toml to environment variables if present
+secrets_path = Path(".streamlit/secrets.toml")
+if secrets_path.exists():
+    try:
+        secrets = toml.load(secrets_path)
+        if "SENDGRID_API_KEY" in secrets:
+            os.environ["SENDGRID_API_KEY"] = secrets["SENDGRID_API_KEY"]
+        if "EMAIL_SENDER" in secrets:
+            os.environ["SENDER_EMAIL"] = secrets["EMAIL_SENDER"]
+    except Exception as e:
+        print(f"[WARNING] Failed to load secrets.toml: {e}")
 
 # ===============================
 # APP INIT
@@ -42,9 +56,9 @@ model = joblib.load(MODEL_PATH)
 # SCHEMAS
 # ===============================
 class EmailRequest(BaseModel):
-    subject: str
+    subject: Optional[str] = ""
     body: str
-    receiver_email: str
+    receiver_email: Optional[str] = ""
 
 
 class EmailSendRequest(BaseModel):
@@ -74,7 +88,8 @@ def send_email_backend(receiver_email, label, phishing_prob, legit_prob):
     SENDER_EMAIL = os.getenv("SENDER_EMAIL")
 
     if not SENDGRID_API_KEY or not SENDER_EMAIL:
-        raise HTTPException(status_code=500, detail="Email configuration missing")
+        print("[WARNING] Email configuration missing. Skipping email send.")
+        return
 
     prob_value = phishing_prob if label == "phishing" else legit_prob
 
@@ -90,8 +105,11 @@ def send_email_backend(receiver_email, label, phishing_prob, legit_prob):
         html_content=html_content
     )
 
-    sg = SendGridAPIClient(SENDGRID_API_KEY)
-    sg.send(message)
+    try:
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        sg.send(message)
+    except Exception as e:
+        print(f"[WARNING] SendGrid email failed: {e}")
 
 
 # ===============================
@@ -103,9 +121,11 @@ def health():
 
 
 @app.post("/predict")
-def predict_email(data: EmailRequest, request: Request):
+def predict_email(data: EmailRequest, request: Request, background_tasks: BackgroundTasks):
 
-    text = clean(data.subject + " " + data.body)
+    subject = data.subject or ""
+    body = data.body or ""
+    text = clean(subject + " " + body)
 
     proba = model.predict_proba([text])[0]
     classes = list(model.classes_)
@@ -118,31 +138,35 @@ def predict_email(data: EmailRequest, request: Request):
 
     label = "phishing" if phishing_prob >= legit_prob else "legit"
 
-    # DOMAIN & USER TYPE
-    domain = data.receiver_email.split("@")[-1]
+    # DOMAIN & USER TYPE — only process if email is provided
+    receiver_email = data.receiver_email or ""
+    if receiver_email and "@" in receiver_email:
+        domain = receiver_email.split("@")[-1]
 
-    if "student" in domain:
-        user_type = "President University"
-    else:
-        user_type = "External User"
+        if "student" in domain:
+            user_type = "President University"
+        else:
+            user_type = "External User"
 
-    # SAVE TO MYSQL
-    save_detection(
-        data.receiver_email,
-        domain,
-        user_type,
-        label,
-        phishing_prob,
-        legit_prob
-    )
+        # SAVE TO MYSQL
+        background_tasks.add_task(
+            save_detection,
+            receiver_email,
+            domain,
+            user_type,
+            label,
+            phishing_prob,
+            legit_prob
+        )
 
-    # SEND EMAIL
-    send_email_backend(
-        data.receiver_email,
-        label,
-        phishing_prob,
-        legit_prob
-    )
+        # SEND EMAIL (non-blocking, won't crash if it fails)
+        background_tasks.add_task(
+            send_email_backend,
+            receiver_email,
+            label,
+            phishing_prob,
+            legit_prob
+        )
 
     return {
         "prediction": label,
@@ -159,3 +183,4 @@ def logs():
 @app.get("/stats")
 def stats():
     return get_stats()
+# Trigger API Reload

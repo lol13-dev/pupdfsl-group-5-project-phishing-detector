@@ -9,6 +9,7 @@ import re
 
 from utils.stats_utils import save_stat, load_stats, compute_statistics
 from utils.email_utils import send_result_email
+from utils.analysis_utils import full_analysis
 from database import init_db, save_detection, get_all_detections
 
 
@@ -57,7 +58,7 @@ if 'loaded' not in st.session_state:
         @keyframes gradientMove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         </style>
         <div class="loader-container">
-            <div class="loader-logo">Welcome to PUPD</div>
+            <div class="loader-logo">Welcome to PUPDfSL</div>
             <div class="loader-bar-container"><div class="loader-bar"></div></div>
         </div>
         """, unsafe_allow_html=True)
@@ -113,17 +114,30 @@ st.markdown("""
 }
 .navbar-divider { width: 1px; height: 32px; background: linear-gradient(180deg, transparent, rgba(255,255,255,0.2), transparent); margin: 0 8px; }
 
-.nav-links-container {
-    display: flex; gap: 6px; background: rgba(255,255,255,0.02); padding: 6px 10px;
-    border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);
+/* NAVBAR LINKS (STREAMLIT OVERRIDE) */
+.nav-links-container a {
+    text-decoration: none !important; 
+    color: rgba(255,255,255,0.6) !important; 
+    padding: 10px 18px !important; 
+    border-radius: 10px !important;
+    font-size: 13px !important; 
+    font-weight: 500 !important; 
+    transition: all 0.3s ease !important;
 }
-.nav-link {
-    text-decoration: none; color: rgba(255,255,255,0.5); padding: 10px 18px; border-radius: 10px;
-    font-size: 13px; font-weight: 500; transition: all 0.3s ease;
+
+/* Efek saat mouse diarahkan ke link (Warna Cyan Project) */
+.nav-links-container a:hover {
+    color: #4f8ef7 !important; 
+    background: rgba(79,142,247,0.1) !important;
 }
-.nav-link.active {
-    color: white; background: linear-gradient(135deg, rgba(79,142,247,0.2), rgba(0,212,170,0.2));
-    border: 1px solid rgba(79,142,247,0.3); font-weight: 600;
+
+/* Efek saat menu sedang aktif */
+.nav-links-container a.active {
+    color: white !important; 
+    background: linear-gradient(135deg, rgba(79,142,247,0.2), rgba(123,47,255,0.2)) !important;
+    border: 1px solid rgba(79,142,247,0.4) !important; 
+    font-weight: 600 !important;
+    box-shadow: 0 4px 15px rgba(79,142,247,0.15) !important;
 }
 
 .status-badge {
@@ -172,10 +186,19 @@ st.markdown("""
 .page-subtitle { color: rgba(255,255,255,0.4); font-size: 14px; margin-bottom: 30px; }
 
 /* INPUT & BUTTONS */
-.stTextInput > div > div > input, .stTextArea > div > div > textarea { background: rgba(255,255,255,0.03) !important; border: 1px solid rgba(255,255,255,0.08) !important; border-radius: 14px !important; color: white !important; }
-.stButton > button { background: linear-gradient(135deg, var(--cyan), var(--purple)) !important; color: white !important; border: none !important; border-radius: 14px !important; font-weight: 600 !important; padding: 12px 28px !important; }
+.stTextInput input, .stTextArea textarea { 
+    color: white !important; 
+    background-color: #0d1220 !important; /* Memaksa kotak menjadi gelap */
+    -webkit-text-fill-color: white !important;
+}
+div[data-baseweb="input"], div[data-baseweb="textarea"] {
+    background-color: #0d1220 !important;
+    border: 1px solid rgba(255,255,255,0.2) !important; 
+    border-radius: 10px !important; 
+}
+.stButton > button { background: linear-gradient(135deg, var(--cyan), var(--purple)) !important; border: none !important; border-radius: 14px !important; font-weight: 600 !important; padding: 12px 28px !important; }
+.stButton > button, .stButton > button * { color: white !important; }
 .stDataFrame { border: 1px solid rgba(255,255,255,0.06) !important; border-radius: 16px !important; }
-</style>
 """, unsafe_allow_html=True)
 
 # ===============================
@@ -196,19 +219,18 @@ def nav_class(page_name): return "nav-link active" if menu == page_name else "na
 st.markdown(f"""
 <div class="navbar">
     <div class="navbar-left">
-        <div class="navbar-logo">🛡️</div><div class="navbar-brand">PUPD</div><div class="navbar-divider"></div>
+        <div class="navbar-logo">🛡️</div><div class="navbar-brand">PUPDfSL</div><div class="navbar-divider"></div>
         <div class="nav-links-container">
-            <a class="{nav_class('🏠 Home')}" href="?page=home">Home</a>
-            <a class="{nav_class('📧 Check Your Email')}" href="?page=check">Scanner</a>
-            <a class="{nav_class('📊 Statistics')}" href="?page=statistics">Statistics</a>
-            <a class="{nav_class('🕒 History')}" href="?page=history">History</a>
-            <a class="{nav_class('ℹ️ About')}" href="?page=about">About</a>
+            <a class="{nav_class('🏠 Home')}" href="?page=home" target="_self">Home</a>
+            <a class="{nav_class('📧 Check Your Email')}" href="?page=check" target="_self">Scanner</a>
+            <a class="{nav_class('📊 Statistics')}" href="?page=statistics" target="_self">Statistics</a>
+            <a class="{nav_class('🕒 History')}" href="?page=history" target="_self">History</a>
+            <a class="{nav_class('ℹ️ About')}" href="?page=about" target="_self">About</a>
         </div>
     </div>
     <div class="status-badge"><div class="status-dot"></div>System Online</div>
 </div>
 """, unsafe_allow_html=True)
-
 # ===============================
 # PAGE: HOME
 # ===============================
@@ -218,7 +240,7 @@ if menu == "🏠 Home":
         <div class="hero-bg"></div>
         <div class="hero-content">
             <div class="hero-badge"><div class="hero-badge-dot"></div>President University · Economic Survival Project</div>
-            <div class="hero-title">President University<br>Phishing Detector For Student and Lecturer  <span>(PUPD)</span></div>
+            <div class="hero-title">President University<br>Phishing Detector For Student and Lecturer  <span>(PUPDfSL)</span></div>
             <div class="hero-subtitle">"Emails in, Phishing Out"</div>
         </div>
     </div>
@@ -282,7 +304,7 @@ elif menu == "📧 Check Your Email":
                 # CORE 1: TRYING TO USE EXTERNAL API (TIMEOUT 3 SECONDS)
                 # ----------------------------------------------------
                 try:
-                    response = requests.post("http://127.0.0.1:8000/predict", json={"subject": subject, "body": body}, timeout=3)
+                    response = requests.post("http://127.0.0.1:8000/predict", json={"subject": subject, "body": body, "receiver_email": receiver_email or ""}, timeout=10)
                     if response.status_code == 200:
                         data = response.json()
                         label = data["prediction"]
@@ -321,14 +343,107 @@ elif menu == "📧 Check Your Email":
                             st.stop()
 
                 # ----------------------------------------------------
-                # SHOW THE RESULTS
+                # RUN ADVANCED ANALYSIS ENGINE
+                # ----------------------------------------------------
+                analysis = full_analysis(subject, body)
+                risk_score = analysis["risk_score"]
+                risk_level = analysis["risk_level"]
+                indicators = analysis["indicators"]
+
+                # ----------------------------------------------------
+                # SHOW VERDICT
                 # ----------------------------------------------------
                 if label == "phishing":
-                    st.error(f"🚨 PHISHING DETECTED ({phishing_prob}%)")
+                    st.markdown(f"""
+                    <div style="background: linear-gradient(135deg, rgba(255,23,68,0.15), rgba(255,23,68,0.05)); border: 2px solid rgba(255,23,68,0.4); border-radius: 16px; padding: 24px; text-align: center; margin: 20px 0;">
+                        <div style="font-size: 28px; font-weight: 800; color: #ff1744;">🚨 PHISHING DETECTED</div>
+                        <div style="font-size: 16px; color: rgba(255,255,255,0.6); margin-top: 8px;">Confidence: <strong style="color: #ff1744;">{phishing_prob}%</strong></div>
+                    </div>
+                    """, unsafe_allow_html=True)
                 else:
-                    st.success(f"✅ LEGITIMATE EMAIL ({legit_prob}%)")
+                    st.markdown(f"""
+                    <div style="background: linear-gradient(135deg, rgba(0,230,118,0.15), rgba(0,230,118,0.05)); border: 2px solid rgba(0,230,118,0.4); border-radius: 16px; padding: 24px; text-align: center; margin: 20px 0;">
+                        <div style="font-size: 28px; font-weight: 800; color: #00e676;">✅ LEGITIMATE EMAIL</div>
+                        <div style="font-size: 16px; color: rgba(255,255,255,0.6); margin-top: 8px;">Confidence: <strong style="color: #00e676;">{legit_prob}%</strong></div>
+                    </div>
+                    """, unsafe_allow_html=True)
 
-                st.json(probs)
+                # ----------------------------------------------------
+                # RISK SCORE & PROBABILITY GAUGES
+                # ----------------------------------------------------
+                col_risk, col_phish, col_legit = st.columns(3)
+                with col_risk:
+                    st.markdown(f"""
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 20px; text-align: center;">
+                        <div style="font-size: 10px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 2px;">Threat Risk Score</div>
+                        <div style="font-size: 36px; font-weight: 800; color: {risk_level['color']}; font-family: 'Orbitron', monospace; margin: 8px 0;">{risk_score}/100</div>
+                        <div style="font-size: 12px; color: {risk_level['color']}; font-weight: 600; padding: 4px 14px; display: inline-block; background: rgba(255,255,255,0.04); border-radius: 20px; border: 1px solid {risk_level['color']};">{risk_level['emoji']} {risk_level['level']}</div>
+                        <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; margin-top: 12px; overflow: hidden;">
+                            <div style="width: {risk_score}%; height: 100%; background: linear-gradient(90deg, #00e676, #ffea00, #ff9100, #ff1744); border-radius: 2px;"></div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                with col_phish:
+                    st.markdown(f"""
+                    <div style="background: rgba(255,23,68,0.05); border: 1px solid rgba(255,23,68,0.15); border-radius: 16px; padding: 20px; text-align: center;">
+                        <div style="font-size: 10px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 2px;">Phishing Probability</div>
+                        <div style="font-size: 36px; font-weight: 800; color: #ff1744; font-family: 'Orbitron', monospace; margin: 8px 0;">{phishing_prob}%</div>
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.3);">ML Classification</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                with col_legit:
+                    st.markdown(f"""
+                    <div style="background: rgba(0,230,118,0.05); border: 1px solid rgba(0,230,118,0.15); border-radius: 16px; padding: 20px; text-align: center;">
+                        <div style="font-size: 10px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 2px;">Legitimate Probability</div>
+                        <div style="font-size: 36px; font-weight: 800; color: #00e676; font-family: 'Orbitron', monospace; margin: 8px 0;">{legit_prob}%</div>
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.3);">ML Classification</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                # ----------------------------------------------------
+                # DETECTED INDICATORS TABLE
+                # ----------------------------------------------------
+                if indicators:
+                    st.markdown(f"""
+                    <div style="margin-top: 28px;">
+                        <div style="font-size: 11px; font-weight: 700; letter-spacing: 3px; color: rgba(255,255,255,0.3); margin-bottom: 16px;">DETECTED INDICATORS ({len(indicators)})</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                    severity_colors = {"critical": "#ff1744", "high": "#ff9100", "medium": "#ffea00", "low": "#90a4ae"}
+
+                    for ind in indicators:
+                        sev_color = severity_colors.get(ind["severity"], "#90a4ae")
+                        st.markdown(f"""
+                        <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-left: 3px solid {sev_color}; border-radius: 0 12px 12px 0; padding: 16px 20px; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 14px;">
+                            <div style="font-size: 22px; min-width: 30px; text-align: center;">{ind['icon']}</div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: #e0e0e0; font-size: 14px;">{ind['title']}</div>
+                                <div style="color: rgba(255,255,255,0.45); font-size: 12px; margin-top: 4px; line-height: 1.5;">{ind['detail']}</div>
+                            </div>
+                            <div style="color: {sev_color}; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 3px 10px; background: rgba(255,255,255,0.03); border-radius: 4px; border: 1px solid {sev_color}; white-space: nowrap;">{ind['severity']}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                else:
+                    st.markdown("""
+                    <div style="background: rgba(0,230,118,0.05); border: 1px solid rgba(0,230,118,0.15); border-radius: 12px; padding: 16px; text-align: center; margin-top: 20px;">
+                        <div style="color: #00e676; font-size: 14px;">✅ No suspicious indicators detected in this email.</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                # ----------------------------------------------------
+                # ANALYSIS ENGINES BADGE
+                # ----------------------------------------------------
+                st.markdown(f"""
+                <div style="text-align: center; margin: 28px 0 12px 0;">
+                    <div style="font-size: 10px; color: rgba(255,255,255,0.25); letter-spacing: 2px; margin-bottom: 10px;">ANALYSIS ENGINES</div>
+                    <span style="font-size: 10px; color: #4f8ef7; padding: 4px 12px; background: rgba(79,142,247,0.08); border-radius: 6px; border: 1px solid rgba(79,142,247,0.2); margin: 0 3px;">🔗 URL Scanner</span>
+                    <span style="font-size: 10px; color: #00d4aa; padding: 4px 12px; background: rgba(0,212,170,0.08); border-radius: 6px; border: 1px solid rgba(0,212,170,0.2); margin: 0 3px;">📝 Language Analyzer</span>
+                    <span style="font-size: 10px; color: #7b2fff; padding: 4px 12px; background: rgba(123,47,255,0.08); border-radius: 6px; border: 1px solid rgba(123,47,255,0.2); margin: 0 3px;">🏗️ Structure Analyzer</span>
+                    <span style="font-size: 10px; color: #ff9100; padding: 4px 12px; background: rgba(255,145,0,0.08); border-radius: 6px; border: 1px solid rgba(255,145,0,0.2); margin: 0 3px;">🧠 ML Classifier</span>
+                </div>
+                <div style="text-align: center; font-size: 11px; color: rgba(255,255,255,0.2); margin-bottom: 20px;">Scanned on {analysis['analysis_timestamp']}</div>
+                """, unsafe_allow_html=True)
 
                 # ----------------------------------------------------
                 # SAVE TO MySQL Databases
@@ -354,7 +469,6 @@ elif menu == "📧 Check Your Email":
                 # ----------------------------------------------------
                 # ALWAYS SAVE TO HISTORY (EVEN IF EMAIL IS EMPTY)
                 # ----------------------------------------------------
-                # If the user does not fill in an email, save it as "Anonymous" so that the history graph continues to grow.
                 user_identifier = receiver_email if receiver_email else "Anonymous"
                 try:
                     save_stat(user_identifier, label)
@@ -367,10 +481,10 @@ elif menu == "📧 Check Your Email":
                 if receiver_email:
                     stats = compute_statistics()
                     try:
-                        send_result_email(receiver_email, label, probs, stats)
-                        st.success(f"📧 Result and statistics successfully sent to {receiver_email}.")
+                        send_result_email(receiver_email, label, probs, stats, analysis)
+                        st.success(f"📧 Detailed scan report successfully sent to {receiver_email}.")
                     except Exception as e:
-                        st.error(f"Failed to send email. Ensure your email utilities are configured correctly. Error: {e}")
+                        st.error(f"Failed to send email. Error: {e}")
 
 # ===============================
 # PAGE: STATISTICS
@@ -400,7 +514,7 @@ elif menu == "📊 Statistics":
             st.subheader("Overall Distribution")
             st.bar_chart(df["prediction"].value_counts())
     except Exception as e:
-        st.info("Data statistik belum tersedia.")
+        st.info("Statistics data is not yet available.")
 
 
 # ===============================
@@ -408,25 +522,33 @@ elif menu == "📊 Statistics":
 # ===============================
 elif menu == "🕒 History":
     st.markdown("""
-        <div class="page-title">Detection History</div>
-        <div class="page-subtitle">View all previous email scanning records.</div>
+        <div class="page-title">Detection History (Admin Only)</div>
+        <div class="page-subtitle">Restricted access. Please enter administrator password to view records.</div>
     """, unsafe_allow_html=True)
 
-    path = Path("data/stats.csv")
+    # Input password
+    admin_pass = st.text_input("Admin Password", type="password")
 
-    if st.button("Reset All History"):
-        if path.exists():
-            path.unlink()
-            st.success("History & statistics successfully reset.")
+    # Cek password (kamu bisa ganti "dosenA" dengan password apapun)
+    if admin_pass == "dosenA":
+        path = Path("data/stats.csv")
+
+        if st.button("Reset All History"):
+            if path.exists():
+                path.unlink()
+                st.success("History & statistics successfully reset.")
+            else:
+                st.info("No history file found.")
+
+        st.markdown("---")
+        if not path.exists() or path.stat().st_size == 0:
+            st.info("No history available.")
         else:
-            st.info("No history file found.")
+            df = pd.read_csv(path)
+            st.dataframe(df, width="stretch")
+    elif admin_pass != "":
+        st.error("❌ Incorrect Password!")
 
-    st.markdown("---")
-    if not path.exists() or path.stat().st_size == 0:
-        st.info("No history available.")
-    else:
-        df = pd.read_csv(path)
-        st.dataframe(df, use_container_width=True)
 
 # ===============================
 # PAGE: ABOUT

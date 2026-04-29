@@ -1,32 +1,24 @@
-# Python cache
+# 1. Python Cache & Environment
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
-
-# Virtual environment
 venv/
+.venv/
 env/
 
-# Database files
+# 2. Rahasia & Konfigurasi Lokal (SANGAT PENTING)
+.streamlit/secrets.toml
+.env
+
+# 3. Data Riwayat & Database Lokal
+data/stats.csv
 *.db
 *.sqlite3
 
-# Environment variables
-.env
-
-# Streamlit secrets
-.streamlit/secrets.toml
-
-# VSCode
+# 4. Folder Editor & Build
 .vscode/
+.dist/
+.idea/
 
-# OS files
+# 5. Mac OS Junk Files
+._*
 .DS_Store
-Thumbs.db
-
-# Jupyter
-.ipynb_checkpoints/
-
-# Logs
-*.log

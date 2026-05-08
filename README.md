@@ -45,7 +45,7 @@ Behind the system is a dedicated team of Informatics innovators driving the proj
 * 💰 **Santa Kristina Nelvi Sagala** — *Chief Financial Officer / Creative Designer*
 * 📊 **Fatih Putra Rizki** — *Project Manager*
 * 🔍 **Gracella Kristiani Kandowangko** — *Marketing Director / Anomaly Analyst*
-* 🛡️ **Mustafa Hayder** — *Chief Security Officer (CSO) / Infrastructure Security Analyst*
+* 🛡️ **Mustafa Hayder Hussein Elamin** — *Chief Security Officer (CSO) / Infrastructure Security Analyst*
 
 ## 🚀 Installation & Local Setup
 

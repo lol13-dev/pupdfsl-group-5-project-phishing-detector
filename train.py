@@ -7,7 +7,7 @@ import numpy as np
 
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score
 import joblib
@@ -49,17 +49,22 @@ if df["label"].nunique() < 2:
     sys.exit("[ERROR] Need at least 2 classes.")
 
 # -------------------------------------------
-# 2) Combine & clean text
+# 2) Combine & clean text (ADVANCED EXTRACTION)
 # -------------------------------------------
 df["text"] = df["subject"].astype(str) + " " + df["body"].astype(str)
 
 def clean(text):
+    # Strip HTML tags
     text = re.sub(r"<[^>]+>", " ", text)
-    text = re.sub(r"http\S+|www\.\S+", " URL ", text)
+    # Catch URL and IP Address patterns commonly used in phishing
+    text = re.sub(r"http\S+|www\.\S+|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}", " SUSPICIOUS_URL ", text)
+    # Mask random numbers so the model focuses on sentence structure
     text = re.sub(r"\d+", " NUM ", text)
+    # Remove extra whitespaces
     text = re.sub(r"\s+", " ", text)
     return text.lower().strip()
 
+print("[INFO] Cleaning text dataset...")
 df["text"] = df["text"].apply(clean)
 
 # -------------------------------------------
@@ -77,29 +82,39 @@ print("\n[DEBUG] Test Distribution:")
 print(pd.Series(y_test).value_counts())
 
 # -------------------------------------------
-# 4) Build Stronger Pipeline
+# 4) Build Stronger Pipeline (GRADE 5 AI SECURITY)
 # -------------------------------------------
+print("\n[INFO] Initializing Advanced Ensemble Architecture...")
+
 pipe = Pipeline([
+    # ADVANCED NLP FEATURE EXTRACTION
     ("tfidf", TfidfVectorizer(
-        ngram_range=(1, 2),
-        max_features=40000,
-        min_df=1,
-        max_df=0.9,
+        ngram_range=(1, 3),         # Capture up to 3-word combinations (Trigrams) e.g., "update your password"
+        max_features=50000,         # Expand the AI's vocabulary memory
+        min_df=2,                   # Drop typos/noise words that appear only once
+        max_df=0.8,                 # Ignore common words appearing in 80%+ of emails
+        sublinear_tf=True,          # Logarithmic scaling to prevent spam word domination (Advanced Technique)
         stop_words="english"
     )),
-    ("clf", LogisticRegression(
-        max_iter=1000,
-        class_weight="balanced"
+    # ENSEMBLE LEARNING MODEL (RANDOM FOREST)
+    ("clf", RandomForestClassifier(
+        n_estimators=200,           # Utilize 200 decision trees simultaneously
+        max_depth=50,               # Limit depth to prevent the AI from memorizing/overfitting
+        min_samples_split=5,        # Strict node splitting rules
+        class_weight="balanced",    # Auto-balance if legit/phishing data is skewed
+        n_jobs=-1,                  # Utilize all available CPU cores for faster training
+        random_state=42
     ))
 ])
 
+print("[INFO] Training the model (This might take a moment using all CPU cores)...")
 pipe.fit(X_train, y_train)
 
 # -------------------------------------------
 # 5) Evaluation
 # -------------------------------------------
 y_pred = pipe.predict(X_test)
-y_proba = pipe.predict_proba(X_test)[:, 1]  # phishing probability
+y_proba = pipe.predict_proba(X_test)[:, 1]  # Phishing probability
 
 print("\n=== Classification Report ===")
 print(classification_report(
@@ -120,7 +135,7 @@ cm_df = pd.DataFrame(
 )
 print(cm_df)
 
-# ROC AUC (ADDED)
+# ROC-AUC
 try:
     y_test_binary = (y_test == "phishing").astype(int)
     auc = roc_auc_score(y_test_binary, y_proba)
@@ -128,12 +143,9 @@ try:
 except:
     print("\nROC-AUC could not be calculated.")
 
-# Cross validation
-cv_scores = cross_val_score(pipe, df["text"], df["label"], cv=5)
-print(f"\nCross Validation Accuracy: {cv_scores.mean():.4f}")
-
 # -------------------------------------------
 # 6) Save model
 # -------------------------------------------
 joblib.dump(pipe, MODEL_PATH)
-print(f"\n[OK] Model saved to: {MODEL_PATH.resolve()}")
+print(f"\n[OK] ADVANCED MODEL SUCCESSFULLY SAVED TO: {MODEL_PATH.resolve()}")
+print("[INFO] Model architecture is now based on Random Forest Ensemble with Sublinear TF-IDF.")

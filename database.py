@@ -1,5 +1,6 @@
 import mysql.connector
 import os
+import typing
 from datetime import datetime
 
 # CONNECTION FOR MySQL Databases
@@ -97,16 +98,20 @@ def get_stats():
         return {"total": 0, "phishing": 0, "legit": 0, "phishing_rate": 0}
 
     try:
-        cursor = connection.cursor(dictionary=True)
+        cursor = connection.cursor()
 
-        cursor.execute("SELECT COUNT(*) as total FROM detections")
-        total = cursor.fetchone()["total"]
+        cursor.execute("SELECT COUNT(*) FROM detections")
+        row_total = cursor.fetchone()
+        # Bungkus dengan str() agar Pylance yakin ini aman untuk di-int()
+        total = int(str(row_total[0])) if row_total else 0
 
-        cursor.execute("SELECT COUNT(*) as phishing FROM detections WHERE prediction='phishing'")
-        phishing = cursor.fetchone()["phishing"]
+        cursor.execute("SELECT COUNT(*) FROM detections WHERE prediction='phishing'")
+        row_phish = cursor.fetchone()
+        phishing = int(str(row_phish[0])) if row_phish else 0
 
-        cursor.execute("SELECT COUNT(*) as legit FROM detections WHERE prediction='legit'")
-        legit = cursor.fetchone()["legit"]
+        cursor.execute("SELECT COUNT(*) FROM detections WHERE prediction='legit'")
+        row_legit = cursor.fetchone()
+        legit = int(str(row_legit[0])) if row_legit else 0
 
         cursor.close()
         connection.close()

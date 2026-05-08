@@ -1,0 +1,12 @@
+fastapi==0.115.0
+uvicorn==0.30.6
+pydantic==2.7.0
+scikit-learn==1.4.2
+joblib==1.4.2
+numpy==1.26.4
+scipy==1.13.1
+sendgrid==6.11.0
+python-http-client==3.3.7
+mysql-connector-python==9.0.0
+toml==0.10.2
+requests==2.32.3
